@@ -118,19 +118,18 @@ const base = [
   },
 ] satisfies CatalogCategory[];
 
-const adapt = (
-  division: string,
-  image: string,
-  real: Partial<Record<string, string>>,
-) =>
-  base.map((c, i) => ({
+const adapt = (division: string, editorial: Record<string, string>) => {
+  const visualSet = Object.values(editorial);
+  return base.map((c, i) => ({
     ...c,
-    image: real[c.slug] || (i < 2 ? image : c.image),
-    gallery: [real[c.slug] || (i < 2 ? image : c.image), c.image].filter(
-      (value, index, values) => values.indexOf(value) === index,
-    ),
+    image: editorial[c.slug] || c.image,
+    gallery: [
+      editorial[c.slug] || c.image,
+      visualSet[(i + 1) % visualSet.length],
+    ],
     description: `${division} — ${c.description.toLowerCase()}`,
   }));
+};
 
 export const catalog: CatalogDivision[] = [
   {
@@ -139,12 +138,8 @@ export const catalog: CatalogDivision[] = [
     eyebrow: "MENSWEAR",
     description:
       "Structured essentials, knitwear, woven programmes and outer layers.",
-    image: images.products.men,
-    categories: adapt(
-      "Menswear",
-      images.products.men,
-      images.products.real.men,
-    ),
+    image: images.products.editorial.men["knit-tops"],
+    categories: adapt("Menswear", images.products.editorial.men),
   },
   {
     slug: "women",
@@ -152,12 +147,8 @@ export const catalog: CatalogDivision[] = [
     eyebrow: "WOMENSWEAR",
     description:
       "Fluid silhouettes, fashion tops, dresses, separates and knitwear.",
-    image: images.products.women,
-    categories: adapt(
-      "Womenswear",
-      images.products.women,
-      images.products.real.women,
-    ),
+    image: images.products.editorial.women["knit-tops"],
+    categories: adapt("Womenswear", images.products.editorial.women),
   },
   {
     slug: "boys",
@@ -165,12 +156,8 @@ export const catalog: CatalogDivision[] = [
     eyebrow: "BOYSWEAR",
     description:
       "Commercial childrenswear categories presented for professional buyers.",
-    image: images.products.boys,
-    categories: adapt(
-      "Boyswear",
-      images.products.boys,
-      images.products.real.boys,
-    ),
+    image: images.products.editorial.boys["knit-tops"],
+    categories: adapt("Boyswear", images.products.editorial.boys),
   },
   {
     slug: "girls",
@@ -178,12 +165,8 @@ export const catalog: CatalogDivision[] = [
     eyebrow: "GIRLSWEAR",
     description:
       "A broad girlswear structure across knit, woven and seasonal categories.",
-    image: images.products.girls,
-    categories: adapt(
-      "Girlswear",
-      images.products.girls,
-      images.products.real.girls,
-    ),
+    image: images.products.editorial.girls["knit-tops"],
+    categories: adapt("Girlswear", images.products.editorial.girls),
   },
 ];
 
@@ -205,11 +188,8 @@ export const specialized = [
     group: "technical",
     description:
       "A visual framework for technical and high-visibility apparel; exact specifications require client validation.",
-    image: images.products.real.specialized.technical,
-    gallery: [
-      images.products.real.specialized.technical,
-      images.products.technical,
-    ],
+    image: images.products.editorial.technical[0],
+    gallery: images.products.editorial.technical.slice(1),
     products: [
       "High Visibility Jackets",
       "Safety Vests",

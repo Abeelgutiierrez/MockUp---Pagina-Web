@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Link,
   Outlet,
@@ -284,110 +284,157 @@ const capabilityImages = [
   images.capabilities.shipping,
 ];
 
-function CapabilityStory({ compact = false }: { compact?: boolean }) {
+type StickyVisualItem = {
+  id: string;
+  title: string;
+  description?: string;
+  image: string;
+  to?: string;
+  group?: string;
+};
+
+function StickyVisualList({
+  items,
+  eyebrow,
+  title,
+  className = "",
+  dark = false,
+}: {
+  items: StickyVisualItem[];
+  eyebrow?: string;
+  title?: string;
+  className?: string;
+  dark?: boolean;
+}) {
   const [active, setActive] = useState(0);
+  const root = useRef<HTMLElement>(null);
   useEffect(() => {
-    const nodes = document.querySelectorAll("[data-capability-step]");
+    const nodes = root.current?.querySelectorAll("[data-sticky-step]");
+    if (!nodes?.length) return;
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible)
-          setActive(
-            Number((visible.target as HTMLElement).dataset.capabilityStep),
-          );
+        if (visible) {
+          setActive(Number((visible.target as HTMLElement).dataset.stickyStep));
+        }
       },
-      { rootMargin: "-35% 0px -35%", threshold: [0, 0.3, 0.7] },
+      { rootMargin: "-40% 0px -40%", threshold: [0, 0.25, 0.6] },
     );
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
-  }, []);
-  const list = compact ? services.slice(0, 4) : services;
+  }, [items.length]);
   return (
-    <div className={`capability-story ${compact ? "compact" : ""}`}>
-      <div className="capability-visual" aria-live="polite">
-        {list.map((service, index) => (
+    <section
+      ref={root}
+      className={`sticky-visual-list ${dark ? "dark" : ""} ${className}`}
+    >
+      {(eyebrow || title) && (
+        <div className="sticky-list-heading">
+          {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+          {title && <h2>{title}</h2>}
+        </div>
+      )}
+      <div className="sticky-list-preview" aria-live="polite">
+        {items.map((item, index) => (
           <img
-            key={service[0]}
+            key={item.id}
             className={active === index ? "active" : ""}
-            src={capabilityImages[index]}
+            src={item.image}
             alt=""
             loading={index === 0 ? "eager" : "lazy"}
           />
         ))}
         <div>
-          <span>0{active + 1}</span>
-          <p>{list[active][1]}</p>
+          <span>{items[active]?.id}</span>
+          <p>{items[active]?.title}</p>
         </div>
       </div>
-      <div className="capability-steps">
-        {list.map((service, index) => (
-          <article
-            key={service[0]}
-            data-capability-step={index}
-            className={active === index ? "active" : ""}
-            onMouseEnter={() => setActive(index)}
-            onFocus={() => setActive(index)}
-            tabIndex={0}
-          >
-            <span>{service[0]}</span>
-            <h3>{service[1]}</h3>
-            <p>{service[2]}</p>
-          </article>
-        ))}
+      <div className="sticky-list-items">
+        {items.map((item, index) => {
+          const copy = (
+            <>
+              <img
+                className="sticky-list-mobile-image"
+                src={item.image}
+                alt=""
+                loading="lazy"
+              />
+              {item.group && <small>{item.group}</small>}
+              <span>{item.id}</span>
+              <h3>{item.title}</h3>
+              {item.description && <p>{item.description}</p>}
+              <Arrow />
+            </>
+          );
+          const common = {
+            "data-sticky-step": index,
+            className: active === index ? "active" : "",
+            onMouseEnter: () => setActive(index),
+            onFocus: () => setActive(index),
+          };
+          return item.to ? (
+            <Link key={item.id} {...common} to={item.to}>
+              {copy}
+            </Link>
+          ) : (
+            <button
+              key={item.id}
+              {...common}
+              onClick={() => setActive(index)}
+              type="button"
+            >
+              {copy}
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </section>
+  );
+}
+
+function CapabilityStory({ compact = false }: { compact?: boolean }) {
+  const list = compact ? services.slice(0, 4) : services;
+  return (
+    <StickyVisualList
+      className={`capability-story ${compact ? "compact" : ""}`}
+      items={list.map((service, index) => ({
+        id: service[0],
+        title: service[1],
+        description: service[2],
+        image: capabilityImages[index],
+      }))}
+    />
   );
 }
 
 const materialImages: Record<string, string> = {
-  Cotton: images.materials.cotton,
-  CVC: images.materials.cvc,
-  Viscose: images.materials.viscose,
-  Linen: images.materials.linen,
-  Denim: images.materials.denim,
+  Cotton: images.materials.fabrications.cotton,
+  CVC: images.materials.fabrications.blends,
+  Viscose: images.materials.fabrications.poplin,
+  Linen: images.materials.fabrications.canvas,
+  Denim: images.materials.fabrications.denim,
   Fleece: images.materials.fleece,
-  Jersey: images.materials.jersey,
-  Piqué: images.materials.pique,
-  "French Terry": images.materials.frenchTerry,
-  Twill: images.materials.twill,
+  Jersey: images.materials.fabrications.dobby,
+  Piqué: images.materials.fabrications.twill,
+  "French Terry": images.materials.fabrications.corduroy,
+  Twill: images.materials.fabrications.twill,
 };
 
 function MaterialExperience() {
   const list = materials.slice(0, 10);
-  const [active, setActive] = useState(list[0]);
   return (
-    <section className="material-experience">
-      <div className="material-preview">
-        {list.map((material) => (
-          <img
-            key={material}
-            className={active === material ? "active" : ""}
-            src={materialImages[material] || images.materials.rolls}
-            alt=""
-            loading="lazy"
-          />
-        ))}
-        <span>TEXTILE / MATERIAL EXPERTISE</span>
-      </div>
-      <div className="material-list">
-        <span className="eyebrow">MATERIAL DIRECTIONS</span>
-        {list.map((material, index) => (
-          <button
-            key={material}
-            className={active === material ? "active" : ""}
-            onMouseEnter={() => setActive(material)}
-            onFocus={() => setActive(material)}
-            onClick={() => setActive(material)}
-          >
-            <span>0{index + 1}</span>
-            {material}
-            <Arrow />
-          </button>
-        ))}
-      </div>
-    </section>
+    <StickyVisualList
+      className="material-experience"
+      eyebrow="MATERIAL DIRECTIONS"
+      title="Texture, weight and handle shape every collection."
+      items={list.map((material, index) => ({
+        id: String(index + 1).padStart(2, "0"),
+        title: material,
+        image: materialImages[material] || images.materials.rolls,
+      }))}
+    />
   );
 }
 
@@ -716,7 +763,7 @@ function ProductExplorer() {
                 : `/products/${item.division}/${item.slug}`
             }
           >
-            <img loading="lazy" src={item.image} />
+            <img loading="lazy" src={item.gallery[1] || item.image} />
             <span>{item.divisionName}</span>
             <div>
               <h3>{item.name}</h3>
@@ -872,46 +919,63 @@ function ProductFamilyIndex({
     images.products.real.boys["knit-tops"],
     images.products.families.accessories,
   ];
-  const [active, setActive] = useState(0);
   return (
-    <section className="family-experience">
-      <div className="family-heading">
-        <span className="eyebrow">PRODUCT FAMILIES</span>
-        <h2>A flexible family of collection directions.</h2>
-      </div>
-      <div className="family-preview">
-        {products.map((product, index) => (
-          <img
-            key={product}
-            className={active === index ? "active" : ""}
-            src={visuals[index % visuals.length]}
-            alt={`${product} visual direction`}
-            loading="lazy"
-          />
-        ))}
-        <span>{products[active]}</span>
-      </div>
-      <div className="family-list">
-        {products.map((product, index) => (
-          <Link
-            key={product}
-            className={active === index ? "active" : ""}
-            onMouseEnter={() => setActive(index)}
-            onFocus={() => setActive(index)}
-            onClick={() => setActive(index)}
-            to={
-              product === "T-Shirts" && gender === "men"
-                ? "/products/men/knit-tops/t-shirts"
-                : "/contact"
-            }
-          >
-            <span>0{index + 1}</span>
-            <h3>{product}</h3>
-            <Arrow />
-          </Link>
-        ))}
-      </div>
-    </section>
+    <StickyVisualList
+      className="family-experience"
+      eyebrow="PRODUCT FAMILIES"
+      title="A flexible family of collection directions."
+      items={products.map((product, index) => ({
+        id: String(index + 1).padStart(2, "0"),
+        title: product,
+        image: visuals[index % visuals.length],
+        to:
+          product === "T-Shirts" && gender === "men"
+            ? "/products/men/knit-tops/t-shirts"
+            : "/contact",
+      }))}
+    />
+  );
+}
+
+const textureImages: Record<string, string> = {
+  Twill: images.materials.fabrications.twill,
+  Canvas: images.materials.fabrications.canvas,
+  Poplin: images.materials.fabrications.poplin,
+  Dobby: images.materials.fabrications.dobby,
+  Cotton: images.materials.fabrications.cotton,
+  Denim: images.materials.fabrications.denim,
+  Corduroy: images.materials.fabrications.corduroy,
+  Blends: images.materials.fabrications.blends,
+};
+
+function FabricationExperience({
+  fabrications,
+  materials: materialOptions,
+}: {
+  fabrications: string[];
+  materials: string[];
+}) {
+  const combined = [
+    ...fabrications.map((title) => ({ title, group: "FABRICATIONS" })),
+    ...materialOptions.map((title) => ({ title, group: "MATERIAL OPTIONS" })),
+  ];
+  return (
+    <StickyVisualList
+      className="fabrication-experience"
+      dark
+      eyebrow="TEXTILE SPECIFICATION"
+      title="A closer look at construction and material direction."
+      items={combined.map((item, index) => ({
+        id: String(index + 1).padStart(2, "0"),
+        title: item.title,
+        group: item.group,
+        image:
+          textureImages[item.title] ||
+          Object.values(textureImages)[
+            index % Object.values(textureImages).length
+          ],
+      }))}
+    />
   );
 }
 
@@ -976,20 +1040,10 @@ function CategoryPage() {
           primaryImage={catalogCategory.image}
           gender={gender}
         />
-        <section className="dark-section technical-lists">
-          <div>
-            <span className="eyebrow">FABRICATIONS</span>
-            {catalogCategory.fabrications.map((x) => (
-              <h3 key={x}>{x}</h3>
-            ))}
-          </div>
-          <div>
-            <span className="eyebrow">MATERIAL OPTIONS</span>
-            {catalogCategory.materials.map((x) => (
-              <h3 key={x}>{x}</h3>
-            ))}
-          </div>
-        </section>
+        <FabricationExperience
+          fabrications={catalogCategory.fabrications}
+          materials={catalogCategory.materials}
+        />
         <CTA title="Start a sourcing conversation." />
       </>
     );
@@ -1079,7 +1133,7 @@ function ProductDetail() {
           </h1>
           <p>Flexible sourcing for everyday essentials.</p>
         </div>
-        <img src={images.products.real.men["knit-tops"]} loading="eager" />
+        <img src={images.products.editorial.men["knit-tops"]} loading="eager" />
       </section>
       <section className="detail-spec">
         <div>
@@ -1202,72 +1256,88 @@ function Contact() {
         title="Contact — Fashion Texa"
         description="Start an apparel sourcing conversation with Fashion Texa."
       />
-      <section className="contact-hero">
-        <span className="eyebrow">LET’S WORK TOGETHER</span>
-        <h1>
-          Tell us what
-          <br />
-          you’re developing.
-        </h1>
-        <p>
-          Share the collection, product direction and timing. This demo form
-          shows the intended enquiry experience.
-        </p>
+      <section className="contact-visual-hero">
+        <img src={images.contact.backdrop} alt="Garment quality inspection" />
+        <div>
+          <span className="eyebrow">LET’S WORK TOGETHER</span>
+          <h1>
+            Bring the brief.
+            <br />
+            We’ll shape the route.
+          </h1>
+          <p>
+            Start with the product, market and timing. Fashion Texa will help
+            structure the next sourcing conversation.
+          </p>
+        </div>
       </section>
-      <section className="contact-grid">
+      <section className="contact-grid contact-editorial">
         <div className="contact-info">
           <span className="eyebrow">CONTACT</span>
           <h2>{contact.name}</h2>
+          <p className="contact-intro">
+            A direct route to product development, supplier coordination and
+            production follow-up from Dhaka.
+          </p>
           {contact.address.map((a) => (
             <p key={a}>{a}</p>
           ))}
           <a href={`tel:${contact.phone}`}>{contact.phone}</a>
           <a href={`mailto:${contact.email}`}>{contact.email}</a>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-          }}
-        >
-          <label>
-            Name
-            <input required name="name" />
-          </label>
-          <label>
-            Company
-            <input required name="company" />
-          </label>
-          <label>
-            Work email
-            <input required type="email" name="email" />
-          </label>
-          <label>
-            Country
-            <input name="country" />
-          </label>
-          <label>
-            Project type
-            <select name="type">
-              <option>Product development</option>
-              <option>Apparel sourcing</option>
-              <option>Production enquiry</option>
-              <option>Other</option>
-            </select>
-          </label>
-          <label className="full">
-            Message
-            <textarea required rows={5} />
-          </label>
-          <button className="button" type="submit">
-            Send inquiry <Arrow />
-          </button>
-          {sent && (
-            <div className="toast" role="status">
-              Demo form — backend integration pending.
-            </div>
-          )}
-        </form>
+        {sent ? (
+          <div className="contact-success" role="status">
+            <span>INQUIRY READY</span>
+            <h2>Thank you for starting the conversation.</h2>
+            <p>
+              This is a presentation demo. Backend delivery will be connected
+              before launch.
+            </p>
+            <button type="button" onClick={() => setSent(false)}>
+              Send another inquiry <Arrow />
+            </button>
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSent(true);
+            }}
+          >
+            <label className="form-field">
+              <span>Name</span>
+              <input required name="name" />
+            </label>
+            <label className="form-field">
+              <span>Company</span>
+              <input required name="company" />
+            </label>
+            <label className="form-field">
+              <span>Work email</span>
+              <input required type="email" name="email" />
+            </label>
+            <label className="form-field">
+              <span>Country</span>
+              <input name="country" />
+            </label>
+            <label className="form-field">
+              <span>Project type</span>
+              <select name="type">
+                <option>Product development</option>
+                <option>Apparel sourcing</option>
+                <option>Production enquiry</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label className="full form-field message-field">
+              <span>Message</span>
+              <textarea required rows={5} />
+            </label>
+            <button className="button" type="submit">
+              Send inquiry <Arrow />
+            </button>
+          </form>
+        )}
       </section>
     </>
   );
