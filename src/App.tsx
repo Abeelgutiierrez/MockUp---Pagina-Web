@@ -137,44 +137,71 @@ function Navbar() {
 
 function Footer() {
   return (
-    <footer>
-      <div className="footer-lead">
-        <div>
-          <span className="eyebrow">FASHION TEXA · DHAKA</span>
-          <h2>
-            From brief to
-            <br />
-            final shipment.
-          </h2>
-        </div>
-        <Link className="circle-link" to="/contact">
-          <Arrow />
+    <footer className="site-footer">
+      <div className="footer-cta">
+        <span className="footer-ghost" aria-hidden="true">
+          FASHION TEXA
+        </span>
+        <span className="eyebrow">A COLLECTION STARTS WITH A CONVERSATION</span>
+        <h2>
+          Let’s build the next
+          <br />
+          collection.
+        </h2>
+        <Link className="footer-project-link" to="/contact">
+          Start a project <Arrow />
         </Link>
       </div>
-      <div className="footer-grid">
-        <BrandLogo footer />
-        <div>
-          <b>Explore</b>
-          {navigation.map((n) => (
-            <Link key={n.to} to={n.to}>
-              {n.label}
-            </Link>
-          ))}
+      <div className="footer-shell">
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <BrandLogo footer />
+            <p>
+              Apparel sourcing, development and production coordination from
+              Dhaka, Bangladesh.
+            </p>
+          </div>
+          <div>
+            <b>Explore</b>
+            {navigation.map((n) => (
+              <Link key={n.to} to={n.to}>
+                {n.label}
+              </Link>
+            ))}
+          </div>
+          <div>
+            <b>Products</b>
+            {catalog.map((division) => (
+              <Link key={division.slug} to={`/products/${division.slug}`}>
+                {division.name}
+              </Link>
+            ))}
+            <Link to="/products/specialized/technical">Technical</Link>
+          </div>
+          <div>
+            <b>Contact</b>
+            <a className="footer-accent" href={`mailto:${contact.email}`}>
+              {contact.email}
+            </a>
+            <a className="footer-accent" href={`tel:${contact.phone}`}>
+              {contact.phone}
+            </a>
+            {contact.address.map((a) => (
+              <span key={a}>{a}</span>
+            ))}
+          </div>
         </div>
-        <div>
-          <b>Contact</b>
-          <a href={`mailto:${contact.email}`}>{contact.email}</a>
-          <a href={`tel:${contact.phone}`}>{contact.phone}</a>
+        <div className="footer-bottom">
+          <span>© 2026 Fashion Texa</span>
+          <span>Privacy · Terms — placeholders</span>
+          <button
+            className="back-to-top"
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            Back to top <Arrow />
+          </button>
         </div>
-        <div>
-          <b>Studio</b>
-          {contact.address.map((a) => (
-            <span key={a}>{a}</span>
-          ))}
-        </div>
-      </div>
-      <div className="footer-bottom">
-        © 2026 Fashion Texa <span>Website concept · Client review</span>
       </div>
     </footer>
   );
@@ -872,17 +899,22 @@ function ProductCard({
 }) {
   return (
     <Link className="product-card" to={item.to || `/products/${gender}`}>
-      <div>
+      <div className="product-card-media">
         <img
           src={item.image || productImage}
           loading="lazy"
           style={{ objectPosition: item.position || "center" }}
         />
-        <span>0{index + 1}</span>
+        <div className="product-card-overlay" />
+        <span className="product-card-eyebrow">
+          {gender.toUpperCase()} / 0{index + 1}
+        </span>
+        <div className="product-card-copy">
+          <h3>{item.name}</h3>
+          <p>{item.meta}</p>
+          <Arrow />
+        </div>
       </div>
-      <h3>{item.name}</h3>
-      <p>{item.meta}</p>
-      <Arrow />
     </Link>
   );
 }
@@ -1273,6 +1305,9 @@ function Contact() {
       </section>
       <section className="contact-grid contact-editorial">
         <div className="contact-info">
+          <span className="contact-word" aria-hidden="true">
+            CONTACT
+          </span>
           <span className="eyebrow">CONTACT</span>
           <h2>{contact.name}</h2>
           <p className="contact-intro">
@@ -1284,6 +1319,16 @@ function Contact() {
           ))}
           <a href={`tel:${contact.phone}`}>{contact.phone}</a>
           <a href={`mailto:${contact.email}`}>{contact.email}</a>
+          <blockquote>
+            From development to shipment,
+            <br />
+            let’s start with the brief.
+          </blockquote>
+          <img
+            className="contact-texture"
+            src={images.materials.fabrications.twill}
+            alt="Twill textile detail"
+          />
         </div>
         {sent ? (
           <div className="contact-success" role="status">
