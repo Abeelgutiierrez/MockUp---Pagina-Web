@@ -59,6 +59,12 @@ function Navbar() {
     setMobile(false);
     setProducts(false);
   }, [location.pathname]);
+  useEffect(() => {
+    document.body.style.overflow = mobile ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobile]);
   return (
     <header className={`nav-shell minimal-nav ${mobile ? "menu-open" : ""}`}>
       <Link to="/" className="brand-link">
@@ -268,6 +274,165 @@ function CTA({
   );
 }
 
+const capabilityImages = [
+  images.capabilities.development,
+  images.capabilities.sourcing,
+  images.capabilities.merchandising,
+  images.capabilities.supplier,
+  images.capabilities.production,
+  images.capabilities.qualityControl,
+  images.capabilities.shipping,
+];
+
+function CapabilityStory({ compact = false }: { compact?: boolean }) {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const nodes = document.querySelectorAll("[data-capability-step]");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible)
+          setActive(
+            Number((visible.target as HTMLElement).dataset.capabilityStep),
+          );
+      },
+      { rootMargin: "-35% 0px -35%", threshold: [0, 0.3, 0.7] },
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+  const list = compact ? services.slice(0, 4) : services;
+  return (
+    <div className={`capability-story ${compact ? "compact" : ""}`}>
+      <div className="capability-visual" aria-live="polite">
+        {list.map((service, index) => (
+          <img
+            key={service[0]}
+            className={active === index ? "active" : ""}
+            src={capabilityImages[index]}
+            alt=""
+            loading={index === 0 ? "eager" : "lazy"}
+          />
+        ))}
+        <div>
+          <span>0{active + 1}</span>
+          <p>{list[active][1]}</p>
+        </div>
+      </div>
+      <div className="capability-steps">
+        {list.map((service, index) => (
+          <article
+            key={service[0]}
+            data-capability-step={index}
+            className={active === index ? "active" : ""}
+            onMouseEnter={() => setActive(index)}
+            onFocus={() => setActive(index)}
+            tabIndex={0}
+          >
+            <span>{service[0]}</span>
+            <h3>{service[1]}</h3>
+            <p>{service[2]}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const materialImages: Record<string, string> = {
+  Cotton: images.materials.cotton,
+  CVC: images.materials.cvc,
+  Viscose: images.materials.viscose,
+  Linen: images.materials.linen,
+  Denim: images.materials.denim,
+  Fleece: images.materials.fleece,
+  Jersey: images.materials.jersey,
+  Piqué: images.materials.pique,
+  "French Terry": images.materials.frenchTerry,
+  Twill: images.materials.twill,
+};
+
+function MaterialExperience() {
+  const list = materials.slice(0, 10);
+  const [active, setActive] = useState(list[0]);
+  return (
+    <section className="material-experience">
+      <div className="material-preview">
+        {list.map((material) => (
+          <img
+            key={material}
+            className={active === material ? "active" : ""}
+            src={materialImages[material] || images.materials.rolls}
+            alt=""
+            loading="lazy"
+          />
+        ))}
+        <span>TEXTILE / MATERIAL EXPERTISE</span>
+      </div>
+      <div className="material-list">
+        <span className="eyebrow">MATERIAL DIRECTIONS</span>
+        {list.map((material, index) => (
+          <button
+            key={material}
+            className={active === material ? "active" : ""}
+            onMouseEnter={() => setActive(material)}
+            onFocus={() => setActive(material)}
+            onClick={() => setActive(material)}
+          >
+            <span>0{index + 1}</span>
+            {material}
+            <Arrow />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PrinciplesStory() {
+  const principles = [
+    ["01", "Partnership over transaction", images.company.development],
+    ["02", "Communication over assumption", images.company.team],
+    ["03", "Quality through coordination", images.company.quality],
+    ["04", "Decisions grounded in the brief", images.company.materials],
+  ];
+  const [active, setActive] = useState(0);
+  return (
+    <section className="principles-story">
+      <div className="principles-visual">
+        {principles.map((item, index) => (
+          <img
+            key={item[0]}
+            src={item[2]}
+            className={active === index ? "active" : ""}
+            alt=""
+            loading="lazy"
+          />
+        ))}
+      </div>
+      <div className="principles-copy">
+        <span className="eyebrow">HOW WE WORK</span>
+        <h2>A clear operating philosophy, seen in every handover.</h2>
+        {principles.map((item, index) => (
+          <button
+            key={item[0]}
+            className={active === index ? "active" : ""}
+            onMouseEnter={() => setActive(index)}
+            onFocus={() => setActive(index)}
+            onClick={() => setActive(index)}
+          >
+            <span>{item[0]}</span>
+            <strong>{item[1]}</strong>
+            <Arrow />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Home() {
   return (
     <>
@@ -283,8 +448,10 @@ function Home() {
           loop
           playsInline
           poster={images.home.hero}
-          aria-label="Factory film placeholder — replace with approved Fashion Texa production footage"
-        />
+          aria-label="Garment manufacturing in progress"
+        >
+          <source src={images.home.heroVideo} type="video/mp4" />
+        </video>
         <div className="hero-overlay" />
         <div className="hero-content">
           <span className="eyebrow light-text">
@@ -363,15 +530,7 @@ function Home() {
           title="One continuous line of coordination."
           link={{ label: "Explore capabilities", to: "/capabilities" }}
         />
-        <div className="service-list">
-          {services.slice(0, 4).map((s) => (
-            <div key={s[0]}>
-              <span>{s[0]}</span>
-              <h3>{s[1]}</h3>
-              <p>{s[2]}</p>
-            </div>
-          ))}
-        </div>
+        <CapabilityStory compact />
       </section>
       <section className="split-feature">
         <img src={images.capabilities.quality} />
@@ -387,14 +546,7 @@ function Home() {
           </Button>
         </div>
       </section>
-      <section className="section material-strip">
-        <span className="eyebrow">MATERIAL DIRECTIONS</span>
-        <div>
-          {materials.slice(0, 10).map((m) => (
-            <span key={m}>{m}</span>
-          ))}
-        </div>
-      </section>
+      <MaterialExperience />
       <CTA />
     </>
   );
@@ -441,25 +593,21 @@ function Company() {
           aligned.”
         </p>
       </section>
-      <section className="section principles">
-        <SectionHead
-          eyebrow="HOW WE WORK"
-          title="A clear operating philosophy."
+      <section className="company-image-band">
+        <img
+          src={images.company.materials}
+          alt="Textile materials selected for product development"
+          loading="lazy"
         />
         <div>
-          {[
-            ["01", "Partnership over transaction"],
-            ["02", "Communication over assumption"],
-            ["03", "Quality through coordination"],
-            ["04", "Decisions grounded in the brief"],
-          ].map((x) => (
-            <article key={x[0]}>
-              <span>{x[0]}</span>
-              <h3>{x[1]}</h3>
-            </article>
-          ))}
+          <span className="eyebrow light-text">WHO WE ARE / HOW WE WORK</span>
+          <h2>
+            Product thinking, supplier coordination and production
+            follow-up—connected.
+          </h2>
         </div>
       </section>
+      <PrinciplesStory />
       <CTA title="Build the next chapter with Fashion Texa." />
     </>
   );
@@ -492,25 +640,12 @@ function Capabilities() {
           ))}
         </div>
       </section>
-      <section className="dark-section service-detail">
-        <div className="sticky-title">
+      <section className="dark-section capability-section">
+        <div className="capability-title">
           <span className="eyebrow">CORE SERVICES</span>
           <h2>Support shaped around the product brief.</h2>
-          <img
-            src={images.capabilities.development}
-            alt="Product development and sourcing coordination"
-            loading="lazy"
-          />
         </div>
-        <div>
-          {services.map((s) => (
-            <article key={s[0]}>
-              <span>{s[0]}</span>
-              <h3>{s[1]}</h3>
-              <p>{s[2]}</p>
-            </article>
-          ))}
-        </div>
+        <CapabilityStory />
       </section>
       <section className="section note-block">
         <span className="eyebrow">SCOPE NOTE</span>
@@ -633,17 +768,7 @@ function Products() {
         ))}
       </section>
       <ProductExplorer />
-      <section className="dark-section materials">
-        <SectionHead
-          eyebrow="MATERIAL EXPERTISE"
-          title="A tactile vocabulary for collection development."
-        />
-        <div>
-          {materials.map((m) => (
-            <span key={m}>{m}</span>
-          ))}
-        </div>
-      </section>
+      <MaterialExperience />
       <CTA title="Discuss your next collection." />
     </>
   );
@@ -728,6 +853,68 @@ function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
   );
 }
 
+function ProductFamilyIndex({
+  products,
+  primaryImage,
+  gender,
+}: {
+  products: string[];
+  primaryImage: string;
+  gender?: string;
+}) {
+  const visuals = [
+    primaryImage,
+    images.products.families.cardigan,
+    images.products.families.tankTop,
+    images.products.families.hooded,
+    images.products.real.men["woven-tops"],
+    images.products.real.women.jackets,
+    images.products.real.boys["knit-tops"],
+    images.products.families.accessories,
+  ];
+  const [active, setActive] = useState(0);
+  return (
+    <section className="family-experience">
+      <div className="family-heading">
+        <span className="eyebrow">PRODUCT FAMILIES</span>
+        <h2>A flexible family of collection directions.</h2>
+      </div>
+      <div className="family-preview">
+        {products.map((product, index) => (
+          <img
+            key={product}
+            className={active === index ? "active" : ""}
+            src={visuals[index % visuals.length]}
+            alt={`${product} visual direction`}
+            loading="lazy"
+          />
+        ))}
+        <span>{products[active]}</span>
+      </div>
+      <div className="family-list">
+        {products.map((product, index) => (
+          <Link
+            key={product}
+            className={active === index ? "active" : ""}
+            onMouseEnter={() => setActive(index)}
+            onFocus={() => setActive(index)}
+            onClick={() => setActive(index)}
+            to={
+              product === "T-Shirts" && gender === "men"
+                ? "/products/men/knit-tops/t-shirts"
+                : "/contact"
+            }
+          >
+            <span>0{index + 1}</span>
+            <h3>{product}</h3>
+            <Arrow />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CategoryPage() {
   const { gender, category } = useParams();
   const division = findDivision(gender);
@@ -784,28 +971,11 @@ function CategoryPage() {
             loading="lazy"
           />
         </section>
-        <section className="section product-index">
-          <SectionHead
-            eyebrow="PRODUCT INDEX"
-            title="A flexible family of collection directions."
-          />
-          <div>
-            {catalogCategory.products.map((p, i) => (
-              <Link
-                key={p}
-                to={
-                  p === "T-Shirts" && gender === "men"
-                    ? "/products/men/knit-tops/t-shirts"
-                    : "/contact"
-                }
-              >
-                <span>0{i + 1}</span>
-                <h3>{p}</h3>
-                <Arrow />
-              </Link>
-            ))}
-          </div>
-        </section>
+        <ProductFamilyIndex
+          products={catalogCategory.products}
+          primaryImage={catalogCategory.image}
+          gender={gender}
+        />
         <section className="dark-section technical-lists">
           <div>
             <span className="eyebrow">FABRICATIONS</span>
